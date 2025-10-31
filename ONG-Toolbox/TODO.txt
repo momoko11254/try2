@@ -1,0 +1,7 @@
+Optical Networks Group (ONG) Toolbox
+
+TODO:
+    * Write 64QAM code
+    * Add verbose to more functions (if P.verbose>0)
+    * Create additional examples
+    * Create Test cases to test future changes of the code
