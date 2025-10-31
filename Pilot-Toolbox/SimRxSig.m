@@ -18,16 +18,30 @@ SigOptX = IQModulator(SigElecX, SigOptX, P);
 SigOptY = IQModulator(SigElecY, SigOptY, P);
 CoSig.Et = [SigOptX.Et; SigOptY.Et];
 CoSig = GaussianFilter(CoSig, P);
+
+%% Prepare span-based link configuration (if requested)
+SpanCfg = struct('Fiber', {}, 'Amplifier', {}, 'HasAmplifier', {});
+TotalSpanLength = 0;
+UseSpanModel = false;
+if isfield(P, 'BackToBack') && P.BackToBack~=1
+    [SpanCfg, TotalSpanLength, UseSpanModel] = ResolveSpanConfiguration(P);
+end
 % Frequency offset
 P.HetMethod = 'Measured';
 CoSig = Heterodyne(CoSig, P);
 % Phase noise caused by linewidth
 [CoSig, P] = AddPhaseNoise(CoSig, P);
 % Additive white Gaussian noise
-CoSig = AddNoise(CoSig, P);
+if ~(isfield(P, 'DisableAddNoise') && P.DisableAddNoise)
+    CoSig = AddNoise(CoSig, P);
+end
 % Fiber propagation (PMD, PDL, Gamma)
-if P.BackToBack~=1
-CoSig = Manakov(CoSig, P);
+if isfield(P, 'BackToBack') && P.BackToBack~=1
+    if UseSpanModel
+        [CoSig, P] = PropagateLinkWithAmplifiers(CoSig, P, SpanCfg, TotalSpanLength);
+    else
+        CoSig = Manakov(CoSig, P);
+    end
 end
 % % ADC
 % P.Res = P.ADC.Res;
